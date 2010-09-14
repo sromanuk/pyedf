@@ -7,7 +7,7 @@ Created by Ray Slakinski on 2010-09-14.
 Copyright (c) 2010 Ray Slakinski. All rights reserved.
 """
 import sys
-import getopt
+import argparse
 import re
 
 
@@ -45,15 +45,18 @@ def read_edf_file(fileobj):
 
 
 def main():
-    argv = sys.argv
-    opts, args = getopt.getopt(argv[1:], "f", ["file="])
-    # option processing
-    for option, value in opts:
-        if option == "-f" or option == '--file':
-            f = open(value, 'r')
-            data = read_edf_file(f)
-            f.close()
-            print data
-
+    # create the parser
+    parser = argparse.ArgumentParser(description='Process a given EDF File.')
+    parser.add_argument(
+        '-f', 
+        '--file',
+        type=argparse.FileType('r'),
+        help='EDF File to be processed.',
+    )
+    args = parser.parse_args()
+    data = read_edf_file(args.file)
+    args.file.close()
+    print data
+    
 if __name__ == '__main__':
     main()
