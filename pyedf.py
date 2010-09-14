@@ -14,12 +14,14 @@ import re
 def read_edf_file(fileobj):
     data = fileobj.read()
     header = {}
-    header['version'] = data[0:7].strip() # 8
-    header['patient_id'] = data[7:88].strip() # 80
-    header['rec_id'] = data[88:168].strip() # 80
-    header['startdate'] = data[168:176].strip() # 8
-    header['starttime'] = data[176:184].strip() # 8
-    header['header_bytes'] = int(data[184:192].strip()) # 8
+    # Parse header information based on the EDF/EDF+ specs
+    # http://www.edfplus.info/specs/index.html
+    header['version'] = data[0:7].strip()
+    header['patient_id'] = data[7:88].strip()
+    header['rec_id'] = data[88:168].strip()
+    header['startdate'] = data[168:176].strip()
+    header['starttime'] = data[176:184].strip()
+    header['header_bytes'] = int(data[184:192].strip())
     header['num_items'] = int(data[236:244].strip())
     header['data_duration'] = float(data[244:252].strip())
     header['num_signals'] = int(data[252:256].strip())
@@ -48,7 +50,7 @@ def main():
     # create the parser
     parser = argparse.ArgumentParser(description='Process a given EDF File.')
     parser.add_argument(
-        '-f', 
+        '-f',
         '--file',
         type=argparse.FileType('r'),
         help='EDF File to be processed.',
@@ -57,6 +59,6 @@ def main():
     data = read_edf_file(args.file)
     args.file.close()
     print data
-    
+
 if __name__ == '__main__':
     main()
