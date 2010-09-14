@@ -1,9 +1,18 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+pyedf.py
+
+Created by Ray Slakinski on 2010-09-14.
+Copyright (c) 2010 Ray Slakinski. All rights reserved.
+"""
+import sys
+import getopt
 import re
 
-def read_edf_file(filename):
-    f = open(filename, 'r')
-    data = f.read()
-    f.close()
+
+def read_edf_file(fileobj):
+    data = fileobj.read()
     header = {}
     header['version'] = data[0:7].strip() # 8
     header['patient_id'] = data[7:88].strip() # 80
@@ -15,22 +24,36 @@ def read_edf_file(filename):
     header['data_duration'] = float(data[244:252].strip())
     header['num_signals'] = int(data[252:256].strip())
     # more data 256 chars down. in header, but ignoring for now
-    print header
     records = []
     records_a = records.append
     rec_pos = 512
     rec_size = 36
     # skip first rec
     rec_pos += rec_size
-    print rec_pos
     for i in range(header['num_items']-1):
         record = {}
         record_split = data[rec_pos:rec_pos+rec_size].split('\x14')
         matches = re.findall(r'([\d]+)', record_split[2])
         record['type'] = record_split[3].strip()
-        record['time'] = {'start': int(matches[0]), 'durration': int(matches[1])}
+        record['time'] = {
+            'start': int(matches[0]),
+            'durration': int(matches[1]),
+        }
         records_a(record)
         rec_pos += rec_size
     return {'header': header, 'records': records}
-data = read_edf_file('20100912_230640_EVE.edf')
-print data
+
+
+def main():
+    argv = sys.argv
+    opts, args = getopt.getopt(argv[1:], "f", ["file="])
+    # option processing
+    for option, value in opts:
+        if option == "-f" or option == '--file':
+            f = open(value, 'r')
+            data = read_edf_file(f)
+            f.close()
+            print data
+
+if __name__ == '__main__':
+    main()
