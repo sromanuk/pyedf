@@ -43,7 +43,50 @@ def read_header(data):
     return header
 
 
-def read_records_header(data):
+def read_records_header(data, items_count):
+    records_header = []
+    position = 257
+    
+    for i in range (items_count-1):
+        records_header[i]['leads_type'] = data[position:position+16].strip()
+        position += 16
+    
+    for i in range (items_count-1):
+        records_header[i]['electrodes_type'] = data[position:position+80].strip()
+        position += 80
+    
+    for i in range (items_count-1):
+        records_header[i]['dimension'] = data[position:position+8].strip()
+        position += 8
+        
+    for i in range (items_count-1):
+        records_header[i]['phisical_minimum'] = edfutils.parse_float(data[position:position+8])
+        position += 8
+        
+    for i in range (items_count-1):
+        records_header[i]['phisical_maximum'] = edfutils.parse_float(data[position:position+8])
+        position += 8
+        
+    for i in range (items_count-1):
+        records_header[i]['numeric_minimum'] = edfutils.parse_int(data[position:position+8])
+        position += 8
+        
+    for i in range (items_count-1):
+        records_header[i]['numeric_maximum'] = edfutils.parse_int(data[position:position+8])
+        position += 8
+    
+    for i in range (items_count-1):
+        records_header[i]['filters_params'] = data[position:position+80].strip()
+        position += 80
+        
+    for i in range (items_count-1):
+        records_header[i]['data_counter'] = edfutils.parse_int(data[position:position+8])
+        position += 8
+        
+    return records_header
+
+
+def read_data_records(data, items_count):
     records_header = []
     records_a = records_header.append
     rec_pos = 256
@@ -51,7 +94,7 @@ def read_records_header(data):
     
     # skip first rec
     rec_pos += rec_size
-    for i in range(header['num_items']-1):
+    for i in range(items_count-1):
         record = {}
         record_split = data[rec_pos:rec_pos+rec_size].split('\x14')
         matches = re.findall(r'([\d]+)', record_split[2])
@@ -63,10 +106,6 @@ def read_records_header(data):
         records_a(record)
         rec_pos += rec_size
     return records_header
-
-
-def read_data_records(data):
-    pass
 
 
 def main():
