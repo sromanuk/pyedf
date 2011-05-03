@@ -9,11 +9,22 @@ Copyright (c) 2011 Slavik Romanuk. All rights reserved.
 """
 
 import re
+import struct
 
 def parse_int(string):
-        data = re.findall(r'(\d+)', string)[0]
-        return int(data)
+        try:
+                data = re.findall(r'(\d+)', string)[0]
+                return int(data)
+        except:
+                try:
+                        return int(string.strip())
+                except:
+                        print len(string.strip()), string, struct.unpack(">h", string.strip())[0]
+                        return struct.unpack(">h", string.strip())[0]
+        
         
 def parse_float(string):
-        data = re.findall(r'(\d+)', string)[0]
-        return float(data)
+        try:
+                return float(string.strip())
+        except:
+                parse_int(string.strip())

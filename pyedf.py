@@ -17,95 +17,98 @@ import re
 import edfutils
 
 
-def read_edf_file(fileobj):
-    data = fileobj.read()
-    
-    header = read_header(data)
-    records_header = read_records_header(data)
-    data_records = read_data_records(data)
-    
-    return {'header': header, 'records_header': records_header}
-    
-    
-def read_header(data):
-    # Parse header information based on the EDF/EDF+ specs
-    # http://www.edfplus.info/specs/index.html
+class edfreader:
     header = {}
-    header['version'] = edfutils.parse_int(data[0:7].strip())
-    header['patient_id'] = data[7:88].strip()
-    header['rec_id'] = data[88:168].strip()
-    header['startdate'] = data[168:176].strip()
-    header['starttime'] = data[176:184].strip()
-    header['header_bytes'] = edfutils.parse_int(data[184:192].strip())
-    header['num_items'] = edfutils.parse_int(data[236:244].strip())
-    header['data_duration'] = edfutils.parse_float(data[244:252].strip())
-    header['num_signals'] = edfutils.parse_int(data[252:256].strip())
-    return header
+    records_header = {}
+        
+        
+    def read_header(self, data):
+        # Parse header information based on the EDF/EDF+ specs
+        # http://www.edfplus.info/specs/index.html
+        self.header['version'] = edfutils.parse_int(data[0:7].strip())
+        self.header['patient_id'] = data[7:88].strip()
+        self.header['rec_id'] = data[88:168].strip()
+        self.header['startdate'] = data[168:176].strip()
+        self.header['starttime'] = data[176:184].strip()
+        self.header['header_bytes'] = edfutils.parse_int(data[184:192].strip())
+        self.header['num_items'] = edfutils.parse_int(data[236:244].strip())
+        self.header['data_duration'] = edfutils.parse_float(data[244:252].strip())
+        self.header['num_signals'] = edfutils.parse_int(data[252:256].strip())
+        return self.header
+    
+    
+    def read_records_header(self, data):
+        position = 256
+        items_count = self.header['num_signals']
+        
+        for i in range (items_count):
+            self.records_header[i] = {}
+        
+        for i in range (items_count):
+            self.records_header[i]['leads_type'] = data[position:position+16].strip()
+            position += 16
+        
+        for i in range (items_count):
+            self.records_header[i]['electrodes_type'] = data[position:position+80].strip()
+            position += 80
+        
+        for i in range (items_count):
+            self.records_header[i]['dimension'] = data[position:position+8].strip()
+            position += 8
+            
+        for i in range (items_count):
+            self.records_header[i]['phisical_minimum'] = edfutils.parse_float(data[position:position+8])
+            position += 8
+            
+        for i in range (items_count):
+            self.records_header[i]['phisical_maximum'] = edfutils.parse_float(data[position:position+8])
+            position += 8
+            
+        for i in range (items_count):
+            self.records_header[i]['numeric_minimum'] = edfutils.parse_int(data[position:position+8])
+            position += 8
+            
+        for i in range (items_count):
+            self.records_header[i]['numeric_maximum'] = edfutils.parse_int(data[position:position+8])
+            position += 8
+        
+        for i in range (items_count):
+            self.records_header[i]['filters_params'] = data[position:position+80].strip()
+            position += 80
+            
+        for i in range (items_count):
+            self.records_header[i]['data_counter'] = edfutils.parse_int(data[position:position+8])
+            position += 8
+            
+        return self.records_header
+    
+    
+    def read_data_records(self, data):
+        blocks_count = self.header['num_items']
+        signal_count = self.header['num_signals']
+        
+        rec_pos = self.header['header_bytes']+1
+        rec_size = 2
+        
+        for i in range (signal_count):
+            self.records_header['data'] = []
+        
+        for block in range(blocks_count):
+            for i in range(signal_count):
+                self.records_header[i]['data'] = edfutils.parse_int(data[rec_pos:rec_pos+rec_size])
+                rec_pos += rec_size
+        return self.records_header
 
 
-def read_records_header(data, items_count):
-    records_header = []
-    position = 257
-    
-    for i in range (items_count-1):
-        records_header[i]['leads_type'] = data[position:position+16].strip()
-        position += 16
-    
-    for i in range (items_count-1):
-        records_header[i]['electrodes_type'] = data[position:position+80].strip()
-        position += 80
-    
-    for i in range (items_count-1):
-        records_header[i]['dimension'] = data[position:position+8].strip()
-        position += 8
+    def read_edf_file(self, fileobj):
+        data = fileobj.read()
         
-    for i in range (items_count-1):
-        records_header[i]['phisical_minimum'] = edfutils.parse_float(data[position:position+8])
-        position += 8
+        self.header = self.read_header(data)
+        self.records_header = self.read_records_header(data)
+        self.read_data_records(data)
         
-    for i in range (items_count-1):
-        records_header[i]['phisical_maximum'] = edfutils.parse_float(data[position:position+8])
-        position += 8
-        
-    for i in range (items_count-1):
-        records_header[i]['numeric_minimum'] = edfutils.parse_int(data[position:position+8])
-        position += 8
-        
-    for i in range (items_count-1):
-        records_header[i]['numeric_maximum'] = edfutils.parse_int(data[position:position+8])
-        position += 8
-    
-    for i in range (items_count-1):
-        records_header[i]['filters_params'] = data[position:position+80].strip()
-        position += 80
-        
-    for i in range (items_count-1):
-        records_header[i]['data_counter'] = edfutils.parse_int(data[position:position+8])
-        position += 8
-        
-    return records_header
+        return {'header': self.header, 'records_header': self.records_header}
 
-
-def read_data_records(data, items_count):
-    records_header = []
-    records_a = records_header.append
-    rec_pos = 256
-    rec_size = 36
-    
-    # skip first rec
-    rec_pos += rec_size
-    for i in range(items_count-1):
-        record = {}
-        record_split = data[rec_pos:rec_pos+rec_size].split('\x14')
-        matches = re.findall(r'([\d]+)', record_split[2])
-        record['type'] = record_split[3].strip()
-        record['time'] = {
-            'start': int(matches[0]),
-            'durration': int(matches[1]),
-        }
-        records_a(record)
-        rec_pos += rec_size
-    return records_header
 
 
 def main():
@@ -119,7 +122,8 @@ def main():
     )
     
     args = parser.parse_args()
-    data = read_edf_file(args.file)
+    parser = edfreader()
+    data = parser.read_edf_file(args.file)
     args.file.close()
     print data
 
