@@ -13,14 +13,20 @@ import struct
 
 def parse_int(string):
         try:
+                string = string.strip()
                 data = re.findall(r'(\d+)', string)[0]
                 return int(data)
         except:
                 try:
-                        return int(string.strip())
+                        return int(string)
                 except:
-                        print len(string.strip()), string, struct.unpack(">h", string.strip())[0]
-                        return struct.unpack(">h", string.strip())[0]
+                        try:
+                                if string.__len__() < 2:
+                                        return struct.unpack(">b", string.strip())[0]
+                                else:
+                                        return struct.unpack(">h", string.strip())[0]
+                        except:
+                                return 0
         
         
 def parse_float(string):

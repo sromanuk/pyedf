@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.abspath( __file__ )))
 
 import argparse
 import re
+import string
 import edfutils
 
 
@@ -87,21 +88,27 @@ class edfreader:
         blocks_count = self.header['num_items']
         signal_count = self.header['num_signals']
         
-        rec_pos = self.header['header_bytes']+1
+        rec_pos = self.header['header_bytes']
         rec_size = 2
         
-        for i in range (signal_count):
-            self.records_header['data'] = []
+        #print ">>>", blocks_count, signal_count, "| the rest is", data.__len__() - blocks_count*signal_count - rec_pos
         
-        for block in range(blocks_count):
+        for i in range (signal_count):
+            self.records_header[i]['data'] = []
+        
+        #for block in range(blocks_count):
+        while rec_pos < data.__len__():
             for i in range(signal_count):
-                self.records_header[i]['data'] = edfutils.parse_int(data[rec_pos:rec_pos+rec_size])
+                number = data[rec_pos:rec_pos+rec_size]
+                self.records_header[i]['data'].append(edfutils.parse_int(number))
                 rec_pos += rec_size
+                
         return self.records_header
 
 
     def read_edf_file(self, fileobj):
         data = fileobj.read()
+        #print data.__len__()
         
         self.header = self.read_header(data)
         self.records_header = self.read_records_header(data)
