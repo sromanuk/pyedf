@@ -103,6 +103,7 @@ class edfreader:
                 self.records_header[i]['data'].append(edfutils.parse_int(number))
                 rec_pos += rec_size
                 
+        #print self.records_header[0]['data'].__len__()
         return self.records_header
 
 
@@ -132,7 +133,7 @@ def main():
     parser = edfreader()
     data = parser.read_edf_file(args.file)
     args.file.close()
-    print data
+    #print data
 
 if __name__ == '__main__':
     main()
